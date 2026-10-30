@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4efe7" />
+    <meta name="description" content="Dashboard de actividad intestinal del grupo." />
+    <title>Cagadas, pero literal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+    <script src="dashboard.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="wordmark" href="./" aria-label="Cagadas, pero literal">
+          <span class="wordmark-mark">✦</span>
+          <span>CAGADAS<br /><b>PERO LITERAL</b></span>
+        </a>
+        <div class="status-pill"><span class="status-dot"></span><span id="status-text">cargando datos</span></div>
+      </header>
+
+      <main>
+        <section class="intro">
+          <div class="intro-copy">
+            <p class="eyebrow">INFORME DE ACTIVIDAD · 2022—2026</p>
+            <h1>Un archivo histórico<br /><em>de lo importante.</em></h1>
+            <p class="lede">Cada 💩 cuenta. Explora los ritmos, las rachas y las pequeñas rivalidades del chat.</p>
+          </div>
+          <div class="intro-stamp" aria-hidden="true">
+            <span>EST.</span>
+            <strong>22</strong>
+            <span>CHAT<br />ARCHIVE</span>
+          </div>
+        </section>
+
+        <section class="controls" aria-label="Filtros del dashboard">
+          <div class="control-label">EXPLORAR POR</div>
+          <label>
+            <span>Año</span>
+            <select id="year-filter" aria-label="Filtrar por año">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <label>
+            <span>Cagadora</span>
+            <select id="person-filter" aria-label="Filtrar por cagadora">
+              <option value="all">Todas</option>
+            </select>
+          </label>
+          <button id="reset-filters" type="button">Restablecer filtros <span>↗</span></button>
+        </section>
+
+        <section class="kpi-grid" aria-label="Resumen">
+          <article class="kpi kpi-primary">
+            <span class="kpi-label">TOTAL REGISTRADO</span>
+            <strong id="total-count">—</strong>
+            <span class="kpi-note">mensajes con 💩</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">DÍA MÁS INTENSO</span>
+            <strong id="peak-day">—</strong>
+            <span class="kpi-note" id="peak-day-note">— cagadas</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">AÑO RÉCORD</span>
+            <strong id="peak-year">—</strong>
+            <span class="kpi-note" id="peak-year-note">— cagadas</span>
+          </article>
+          <article class="kpi">
+            <span class="kpi-label">RITMO MEDIO</span>
+            <strong id="daily-average">—</strong>
+            <span class="kpi-note">por día activo</span>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel panel-wide">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">VOLUMEN ANUAL</p>
+                <h2>La evolución de la cosa</h2>
+              </div>
+              <span class="panel-meta" id="year-range">—</span>
+            </div>
+            <div class="chart-wrap chart-tall"><canvas id="year-chart"></canvas></div>
+          </article>
+
+          <article class="panel panel-ranking">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">CLASIFICACIÓN</p>
+                <h2>Quién manda</h2>
+              </div>
+              <span class="panel-meta">TOTAL</span>
+            </div>
+            <div id="ranking-list" class="ranking-list"></div>
+            <div class="mini-callout"><span>✦</span><span id="leader-callout">Calculando liderazgo...</span></div>
+          </article>
+
+          <article class="panel panel-wide">
+            <div class="panel-heading monthly-heading">
+              <div>
+                <p class="panel-kicker">RITMO MENSUAL</p>
+                <h2>El año en perspectiva</h2>
+              </div>
+              <div class="chart-legend"><span class="legend-dot"></span> cagadas</div>
+            </div>
+            <div class="chart-wrap"><canvas id="month-chart"></canvas></div>
+          </article>
+
+          <article class="panel panel-breakdown">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">REPARTO</p>
+                <h2>El equilibrio de fuerzas</h2>
+              </div>
+            </div>
+            <div class="donut-wrap"><canvas id="person-chart"></canvas><div class="donut-center"><strong id="donut-total">—</strong><span>total</span></div></div>
+            <div id="person-legend" class="person-legend"></div>
+          </article>
+        </section>
+
+        <section class="insight-strip">
+          <div class="insight-icon">☼</div>
+          <div>
+            <p class="panel-kicker">OBSERVACIÓN DEL ARCHIVO</p>
+            <p id="insight-text">Analizando patrones...</p>
+          </div>
+        </section>
+      </main>
+
+      <footer>
+        <span>DATOS EXTRAÍDOS DEL CHAT DE WHATSAPP</span>
+        <span>HECHO CON CURIOSIDAD Y CERO JUICIO</span>
+      </footer>
+    </div>
+  </body>
+</html>
