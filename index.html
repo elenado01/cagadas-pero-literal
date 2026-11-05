@@ -10,9 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
-    <script src="dashboard.js?v=20" defer></script>
+    <script src="dashboard.js?v=21" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -163,9 +163,9 @@
           </article>
         </section>
 
-        <div id="chart-history-action" class="chart-history-action" hidden>
-          <span id="chart-history-selection">Selección preparada</span>
-          <button id="chart-history-confirm" type="button">↗ Ver en histórico</button>
+        <div id="chart-history-action" class="chart-history-action" role="button" tabindex="0" hidden>
+          <span class="chart-history-action-label">TOCAR PARA ABRIR EL HISTÓRICO</span>
+          <strong id="chart-history-selection">Selección preparada</strong>
         </div>
 
         <section class="insight-strip">

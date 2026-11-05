@@ -429,7 +429,9 @@ async function init() {
     $("#year-filter").addEventListener("change", renderTopics);
     $("#person-filter").addEventListener("change", renderTopics);
     $("#history-all").addEventListener("click", () => selectHistory("Histórico completo", () => true));
-    $("#chart-history-confirm").addEventListener("click", () => { if (!pendingHistoryAction) return; const { navigate } = pendingHistoryAction; clearPendingHistoryAction(); navigate(); });
+    const openPendingHistory = () => { if (!pendingHistoryAction) return; const { navigate } = pendingHistoryAction; clearPendingHistoryAction(); navigate(); };
+    $("#chart-history-action").addEventListener("click", openPendingHistory);
+    $("#chart-history-action").addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openPendingHistory(); } });
   } catch (error) {
     console.error(error);
     $("#status-text").textContent = "error al cargar datos";

@@ -157,8 +157,10 @@ footer { display: flex; justify-content: space-between; padding: 18px 0 30px; co
   .view-tab { width: 0; min-width: 0; flex: 1 1 0; overflow: hidden; white-space: nowrap; }
   .history-heading { align-items: flex-start; flex-direction: column; }
   .topic-filter, .topic-filter select { width: 100%; }
-  .chart-history-action { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 18px 0 0; padding: 12px 14px; border: 1px solid var(--ink); background: var(--acid); color: var(--ink); font: 10px var(--mono); }
-  .chart-history-action button { flex: 0 0 auto; padding: 9px 10px; border: 1px solid var(--ink); background: var(--ink); color: var(--card); font: 10px var(--mono); cursor: pointer; }
+  .chart-history-action { display: grid; gap: 5px; margin: 18px 0 0; padding: 14px; border: 1px solid var(--ink); background: var(--ink); color: var(--card); font: 10px var(--mono); cursor: pointer; }
+  .chart-history-action:focus-visible { outline: 2px solid var(--coral); outline-offset: 3px; }
+  .chart-history-action-label { color: var(--acid); font-size: 9px; }
+  .chart-history-action strong { font: 500 14px var(--sans); }
   footer { flex-direction: column; gap: 8px; }
 }
 
