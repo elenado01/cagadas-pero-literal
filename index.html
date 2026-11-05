@@ -6,12 +6,13 @@
     <meta name="theme-color" content="#f4efe7" />
     <meta name="description" content="Dashboard de actividad intestinal del grupo." />
     <title>Cagadas, pero literal</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
-    <script src="dashboard.js" defer></script>
+    <script src="dashboard.js?v=19" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -51,9 +52,15 @@
               <option value="all">Todas</option>
             </select>
           </label>
-          <button id="reset-filters" type="button">Restablecer filtros <span>↗</span></button>
         </section>
 
+        <nav class="view-tabs" aria-label="Vistas del archivo">
+          <button class="view-tab is-active" id="dashboard-tab" type="button" role="tab" aria-selected="true">Dashboard</button>
+          <button class="view-tab" id="history-tab" type="button" role="tab" aria-selected="false">Histórico <span id="history-tab-count">0</span></button>
+          <button class="view-tab" id="topics-tab" type="button" role="tab" aria-selected="false">Conversaciones <span id="topics-tab-count">0</span></button>
+        </nav>
+
+        <section id="dashboard-view" class="dashboard-view" role="tabpanel">
         <section class="kpi-grid" aria-label="Resumen">
           <article class="kpi kpi-primary">
             <span class="kpi-label">TOTAL REGISTRADO</span>
@@ -104,10 +111,9 @@
           <article class="panel panel-wide">
             <div class="panel-heading monthly-heading">
               <div>
-                <p class="panel-kicker">RITMO MENSUAL</p>
-                <h2>El año en perspectiva</h2>
+                <p class="panel-kicker">RITMO MENSUAL POR CAGADORA</p>
+                <h2>De enero a diciembre</h2>
               </div>
-              <div class="chart-legend"><span class="legend-dot"></span> cagadas</div>
             </div>
             <div class="chart-wrap"><canvas id="month-chart"></canvas></div>
           </article>
@@ -122,6 +128,39 @@
             <div class="donut-wrap"><canvas id="person-chart"></canvas><div class="donut-center"><strong id="donut-total">—</strong><span>total</span></div></div>
             <div id="person-legend" class="person-legend"></div>
           </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">MOMENTO DEL DÍA</p>
+                <h2>La hora punta</h2>
+              </div>
+              <span class="panel-meta">00 — 23 H</span>
+            </div>
+            <div class="chart-wrap"><canvas id="hour-chart"></canvas></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">DISTRIBUCIÓN DIARIA</p>
+                <h2>Cuántas veces por día</h2>
+              </div>
+              <span class="panel-meta">DÍAS</span>
+            </div>
+            <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+          </article>
+
+          <article class="panel panel-wide">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-kicker">RACHAS SIN CAGAR</p>
+                <h2>Cuántos días seguidos</h2>
+              </div>
+              <span class="panel-meta">INTERVALOS</span>
+            </div>
+            <div class="chart-wrap chart-tall"><canvas id="absence-chart"></canvas></div>
+          </article>
         </section>
 
         <section class="insight-strip">
@@ -129,6 +168,52 @@
           <div>
             <p class="panel-kicker">OBSERVACIÓN DEL ARCHIVO</p>
             <p id="insight-text">Analizando patrones...</p>
+          </div>
+        </section>
+        </section>
+
+        <section id="history-view" class="history-view" role="tabpanel" hidden>
+          <div class="history-heading">
+            <div>
+              <p class="panel-kicker">ARCHIVO SELECCIONADO</p>
+              <h2 id="history-title">Histórico completo</h2>
+              <p id="history-context" class="history-context">Todos los registros · más recientes primero</p>
+            </div>
+            <button id="history-all" class="history-all" type="button">Ver todo el histórico</button>
+          </div>
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead id="history-head">
+                <tr><th>Cagadora</th><th>Fecha</th><th>Hora</th></tr>
+              </thead>
+              <tbody id="history-list"></tbody>
+            </table>
+            <p id="history-empty" class="history-empty" hidden>No hay cagadas para esta selección.</p>
+          </div>
+        </section>
+
+        <section id="topics-view" class="history-view topics-view" role="tabpanel" hidden>
+          <div class="history-heading">
+            <div>
+              <p class="panel-kicker">ARQUEOLOGÍA DEL CHAT</p>
+              <h2>El chat también tuvo sus momentos de mierda</h2>
+              <p id="topics-context" class="history-context">Mensajes relacionados · más recientes primero</p>
+            </div>
+            <label class="topic-filter">
+              <span>Tema</span>
+              <select id="topic-filter" aria-label="Filtrar por tema">
+                <option value="all">Todos los temas</option>
+              </select>
+            </label>
+          </div>
+          <div class="history-table-wrap">
+            <table class="history-table topics-table">
+              <thead>
+                <tr><th>Tema</th><th>Quién</th><th>Fecha</th><th>Mensaje</th></tr>
+              </thead>
+              <tbody id="topics-list"></tbody>
+            </table>
+            <p id="topics-empty" class="history-empty" hidden>No hay conversaciones para esta selección.</p>
           </div>
         </section>
       </main>
