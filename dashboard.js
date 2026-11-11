@@ -6,6 +6,7 @@ const COLORS = {
   blue: "#a7d9de",
   paper: "#ebe2d5",
 };
+const ADMIN_WORKER_URL = "https://cagadas-upload.elena-d-o-2012.workers.dev";
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -15,6 +16,7 @@ let topicMessages = [];
 let charts = {};
 let people = [];
 let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "records", predicate: () => true };
+let adminPassword = "";
 
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
@@ -65,6 +67,71 @@ function formatTimestamp(date) {
 
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function setAdminFeedback(message, isError = false) {
+  const feedback = $("#admin-feedback");
+  feedback.textContent = message;
+  feedback.classList.toggle("is-error", isError);
+}
+
+function openAdminModal() {
+  $("#admin-modal").hidden = false;
+  $("#admin-password").focus();
+}
+
+function closeAdminModal() {
+  $("#admin-modal").hidden = true;
+  adminPassword = "";
+  $("#admin-login-form").hidden = false;
+  $("#admin-upload-form").hidden = true;
+  $("#admin-password").value = "";
+  $("#chat-file").value = "";
+  setAdminFeedback("");
+}
+
+async function validateAdminPassword(event) {
+  event.preventDefault();
+  const password = $("#admin-password").value;
+  setAdminFeedback("Comprobando acceso...");
+  try {
+    const response = await fetch(`${ADMIN_WORKER_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Contraseña incorrecta.");
+    adminPassword = password;
+    $("#admin-login-form").hidden = true;
+    $("#admin-upload-form").hidden = false;
+    setAdminFeedback("Acceso concedido. Selecciona el chat.");
+    $("#chat-file").focus();
+  } catch (error) {
+    setAdminFeedback(error.message || "No se pudo validar el acceso.", true);
+  }
+}
+
+async function uploadChat(event) {
+  event.preventDefault();
+  const file = $("#chat-file").files[0];
+  if (!file) {
+    setAdminFeedback("Selecciona un archivo .txt.", true);
+    return;
+  }
+  const formData = new FormData();
+  formData.append("password", adminPassword);
+  formData.append("file", file, file.name);
+  setAdminFeedback("Subiendo el chat y preparando la actualización...");
+  try {
+    const response = await fetch(`${ADMIN_WORKER_URL}/upload`, { method: "POST", body: formData });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "No se pudo subir el chat.");
+    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.");
+    $("#chat-file").value = "";
+  } catch (error) {
+    setAdminFeedback(error.message || "No se pudo iniciar la actualización.", true);
+  }
 }
 
 function getFilteredRows() {
@@ -427,7 +494,14 @@ async function init() {
     updateDashboard();
     renderTopics();
     const latestPoop = rows.reduce((latest, row) => row.date > latest.date ? row : latest, rows[0]);
-    $("#status-text").textContent = `${formatNumber(rows.length)} registros sincronizados · última cagada: ${formatTimestamp(latestPoop.date)}`;
+    $("#status-count").textContent = `${formatNumber(rows.length)} registros sincronizados ·`;
+    $("#status-text").textContent = `última cagada: ${formatTimestamp(latestPoop.date)}`;
+    $("#admin-trigger").addEventListener("click", openAdminModal);
+    $("#admin-close").addEventListener("click", closeAdminModal);
+    $("#admin-login-form").addEventListener("submit", validateAdminPassword);
+    $("#admin-upload-form").addEventListener("submit", uploadChat);
+    $("#admin-modal").addEventListener("click", (event) => { if (event.target.id === "admin-modal") closeAdminModal(); });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#admin-modal").hidden) closeAdminModal(); });
     const handleFilterChange = (event) => { event.target.blur(); updateDashboard(); };
     $("#year-filter").addEventListener("change", handleFilterChange);
     $("#person-filter").addEventListener("change", handleFilterChange);

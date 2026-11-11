@@ -10,9 +10,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=5" />
+    <link rel="stylesheet" href="styles.css?v=6" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
-    <script src="dashboard.js?v=24" defer></script>
+    <script src="dashboard.js?v=25" defer></script>
   </head>
   <body>
     <div class="page-shell">
@@ -21,7 +21,7 @@
           <span class="wordmark-mark">✦</span>
           <span>CAGADAS<br /><b>PERO LITERAL</b></span>
         </a>
-        <div class="status-pill"><span class="status-dot"></span><span id="status-text">cargando datos</span></div>
+        <div class="status-pill"><span class="status-dot"></span><span id="status-count">cargando datos</span><button class="status-trigger" id="admin-trigger" type="button" aria-haspopup="dialog"><span id="status-text">última cagada</span></button></div>
       </header>
 
       <main>
@@ -222,6 +222,25 @@
         <span>DATOS EXTRAÍDOS DEL CHAT DE WHATSAPP</span>
         <span>HECHO CON CURIOSIDAD Y CERO JUICIO</span>
       </footer>
+    </div>
+
+    <div id="admin-modal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-title" hidden>
+      <div class="admin-dialog">
+        <button id="admin-close" class="admin-close" type="button" aria-label="Cerrar">×</button>
+        <p class="panel-kicker">ZONA DE ADMINISTRACIÓN</p>
+        <h2 id="admin-title">Actualizar el archivo</h2>
+        <form id="admin-login-form" class="admin-form">
+          <label for="admin-password">Contraseña</label>
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required />
+          <button type="submit">Acceder</button>
+        </form>
+        <form id="admin-upload-form" class="admin-form" hidden>
+          <label for="chat-file">Chat de WhatsApp (.txt)</label>
+          <input id="chat-file" name="file" type="file" accept=".txt,text/plain" required />
+          <button type="submit">Actualizar datos</button>
+        </form>
+        <p id="admin-feedback" class="admin-feedback" role="status"></p>
+      </div>
     </div>
   </body>
 </html>

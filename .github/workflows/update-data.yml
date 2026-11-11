@@ -1,0 +1,79 @@
+name: Update dashboard data
+
+on:
+  repository_dispatch:
+    types: [update-chat]
+  workflow_dispatch:
+    inputs:
+      object_key:
+        description: "R2 object key for a temporary WhatsApp TXT"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-dashboard-data
+  cancel-in-progress: false
+
+env:
+  OBJECT_KEY: ${{ github.event.client_payload.object_key || inputs.object_key }}
+  R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+  R2_BUCKET: ${{ secrets.R2_BUCKET }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install notebook dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Download TXT from R2
+        run: |
+          test -n "$OBJECT_KEY"
+          case "$OBJECT_KEY" in
+            uploads/*.txt) ;;
+            *) echo "Invalid R2 object key"; exit 1 ;;
+          esac
+          mkdir -p data/raw
+          aws s3 cp "s3://$R2_BUCKET/$OBJECT_KEY" "data/raw/Chat de WhatsApp con 💩.txt" --endpoint-url "$R2_ENDPOINT"
+          test -s "data/raw/Chat de WhatsApp con 💩.txt"
+
+      - name: Execute notebook
+        run: python -m jupyter nbconvert --to notebook --execute 01_read_poop_file.ipynb --output-dir "$RUNNER_TEMP" --output executed_read_poop_file.ipynb
+
+      - name: Regenerate conversation data
+        run: python extract_topic_messages.py
+
+      - name: Remove temporary TXT from workspace
+        if: always()
+        run: rm -f -- "data/raw/Chat de WhatsApp con 💩.txt"
+
+      - name: Remove TXT from R2
+        if: always() && env.OBJECT_KEY != ''
+        run: aws s3 rm "s3://$R2_BUCKET/$OBJECT_KEY" --endpoint-url "$R2_ENDPOINT"
+
+      - name: Commit generated dashboard data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/staging/cagadas.csv data/staging/conversaciones_caca.json
+          if git diff --cached --quiet; then
+            echo "No hay cambios en los datos generados."
+            exit 0
+          fi
+          git commit -m "Actualizar datos del dashboard"
+          git push
