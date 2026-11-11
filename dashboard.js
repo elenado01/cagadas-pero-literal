@@ -83,38 +83,15 @@ function openAdminModal() {
 function closeAdminModal() {
   $("#admin-modal").hidden = true;
   adminPassword = "";
-  $("#admin-login-form").hidden = false;
-  $("#admin-upload-form").hidden = true;
   $("#admin-password").value = "";
   $("#chat-file").value = "";
   setAdminFeedback("");
 }
 
-async function validateAdminPassword(event) {
-  event.preventDefault();
-  const password = $("#admin-password").value;
-  setAdminFeedback("Comprobando acceso...");
-  try {
-    const response = await fetch(`${ADMIN_WORKER_URL}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ password }),
-    });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Contraseña incorrecta.");
-    adminPassword = password;
-    $("#admin-login-form").hidden = true;
-    $("#admin-upload-form").hidden = false;
-    setAdminFeedback("Acceso concedido. Selecciona el chat.");
-    $("#chat-file").focus();
-  } catch (error) {
-    setAdminFeedback(error.message || "No se pudo validar el acceso.", true);
-  }
-}
-
 async function uploadChat(event) {
   event.preventDefault();
   const file = $("#chat-file").files[0];
+  adminPassword = $("#admin-password").value;
   if (!file) {
     setAdminFeedback("Selecciona un archivo .txt.", true);
     return;
@@ -498,7 +475,6 @@ async function init() {
     $("#status-text").textContent = `última cagada: ${formatTimestamp(latestPoop.date)}`;
     $("#admin-trigger").addEventListener("click", openAdminModal);
     $("#admin-close").addEventListener("click", closeAdminModal);
-    $("#admin-login-form").addEventListener("submit", validateAdminPassword);
     $("#admin-upload-form").addEventListener("submit", uploadChat);
     $("#admin-modal").addEventListener("click", (event) => { if (event.target.id === "admin-modal") closeAdminModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#admin-modal").hidden) closeAdminModal(); });

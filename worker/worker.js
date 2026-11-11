@@ -1,41 +1,52 @@
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-function corsHeaders(env) {
+function allowedOrigin(request, env) {
+  const origin = request.headers.get("Origin");
+  const configuredOrigins = (env.ALLOWED_ORIGINS || env.ALLOWED_ORIGIN || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const developmentOrigins = ["http://localhost:8000", "http://127.0.0.1:8000"];
+  const allowedOrigins = [...new Set([...configuredOrigins, ...developmentOrigins])];
+  return origin && allowedOrigins.includes(origin) ? origin : configuredOrigins[0] || "";
+}
+
+function corsHeaders(request, env) {
   return {
-    "Access-Control-Allow-Origin": env.ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": allowedOrigin(request, env),
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
-function jsonResponse(payload, status, env) {
+function jsonResponse(payload, status, request, env) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      ...corsHeaders(env),
+      ...corsHeaders(request, env),
     },
   });
 }
 
 function isAllowedOrigin(request, env) {
   const origin = request.headers.get("Origin");
-  return !origin || origin === env.ALLOWED_ORIGIN;
+  return !origin || Boolean(allowedOrigin(request, env));
 }
 
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders(env) });
+      return new Response(null, { headers: corsHeaders(request, env) });
     }
 
     if (!isAllowedOrigin(request, env)) {
-      return jsonResponse({ error: "Origen no autorizado." }, 403, env);
+      return jsonResponse({ error: "Origen no autorizado." }, 403, request, env);
     }
 
     const url = new URL(request.url);
     if (request.method !== "POST") {
-      return jsonResponse({ error: "Método no permitido." }, 405, env);
+      return jsonResponse({ error: "Método no permitido." }, 405, request, env);
     }
 
     if (url.pathname === "/login") {
@@ -43,29 +54,29 @@ export default {
       try {
         payload = await request.json();
       } catch {
-        return jsonResponse({ error: "Solicitud no válida." }, 400, env);
+        return jsonResponse({ error: "Solicitud no válida." }, 400, request, env);
       }
       if (payload.password !== env.ADMIN_PASSWORD) {
-        return jsonResponse({ error: "Contraseña incorrecta." }, 401, env);
+        return jsonResponse({ error: "Contraseña incorrecta." }, 401, request, env);
       }
-      return jsonResponse({ ok: true }, 200, env);
+      return jsonResponse({ ok: true }, 200, request, env);
     }
 
     if (url.pathname !== "/upload") {
-      return jsonResponse({ error: "Ruta no encontrada." }, 404, env);
+      return jsonResponse({ error: "Ruta no encontrada." }, 404, request, env);
     }
 
     const form = await request.formData();
     const password = form.get("password");
     const file = form.get("file");
     if (password !== env.ADMIN_PASSWORD) {
-      return jsonResponse({ error: "Contraseña incorrecta." }, 401, env);
+      return jsonResponse({ error: "Contraseña incorrecta." }, 401, request, env);
     }
     if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".txt")) {
-      return jsonResponse({ error: "Selecciona un archivo .txt." }, 400, env);
+      return jsonResponse({ error: "Selecciona un archivo .txt." }, 400, request, env);
     }
     if (file.size === 0 || file.size > MAX_FILE_SIZE) {
-      return jsonResponse({ error: "El archivo debe tener entre 1 byte y 10 MB." }, 400, env);
+      return jsonResponse({ error: "El archivo debe tener entre 1 byte y 10 MB." }, 400, request, env);
     }
 
     const objectKey = `uploads/${crypto.randomUUID()}.txt`;
@@ -93,12 +104,13 @@ export default {
 
     if (!githubResponse.ok) {
       await env.UPLOADS.delete(objectKey);
-      return jsonResponse({ error: "No se pudo iniciar GitHub Actions." }, 502, env);
+      return jsonResponse({ error: "No se pudo iniciar GitHub Actions." }, 502, request, env);
     }
 
     return jsonResponse(
       { ok: true, message: "Archivo recibido. GitHub Actions actualizará los datos." },
       200,
+      request,
       env,
     );
   },
