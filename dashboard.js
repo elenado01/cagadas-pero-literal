@@ -14,7 +14,7 @@ let rows = [];
 let topicMessages = [];
 let charts = {};
 let people = [];
-let historySelection = { title: "Histórico completo", type: "records", predicate: () => true };
+let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "records", predicate: () => true };
 
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
@@ -437,7 +437,7 @@ async function init() {
     $("#topic-filter").addEventListener("change", renderTopics);
     $("#year-filter").addEventListener("change", renderTopics);
     $("#person-filter").addEventListener("change", renderTopics);
-    $("#history-all").addEventListener("click", () => selectHistory("Histórico completo", () => true));
+    $("#history-all").addEventListener("click", () => selectHistory("Quién estuvo ahí cuando ocurrió", () => true));
   } catch (error) {
     console.error(error);
     $("#status-text").textContent = "error al cargar datos";
