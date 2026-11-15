@@ -24,6 +24,10 @@ let updateTimeoutTimer = null;
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+const fetchFresh = (path) => fetch(`${path}?cb=${Date.now()}-${Math.random().toString(36).slice(2)}`, {
+  cache: "no-store",
+  headers: { "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
+});
 
 function parseCsv(csv) {
   const lines = csv.trim().split(/\r?\n/);
@@ -103,11 +107,10 @@ function closeAdminModal() {
 }
 
 async function checkForUpdatedData() {
-  const cacheKey = `?t=${Date.now()}`;
   const [csvResponse, topicsResponse, markerResponse] = await Promise.all([
-    fetch(`data/staging/cagadas.csv${cacheKey}`, { cache: "no-store" }),
-    fetch(`data/staging/conversaciones_caca.json${cacheKey}`, { cache: "no-store" }),
-    fetch(`data/staging/ultima_actualizacion.json${cacheKey}`, { cache: "no-store" }),
+    fetchFresh("data/staging/cagadas.csv"),
+    fetchFresh("data/staging/conversaciones_caca.json"),
+    fetchFresh("data/staging/ultima_actualizacion.json"),
   ]);
   if (!csvResponse.ok || !topicsResponse.ok) return false;
   const marker = markerResponse.ok ? await markerResponse.text() : "";
@@ -135,14 +138,7 @@ function waitForUpdatedData() {
   }, 10000);
   updateTimeoutTimer = window.setTimeout(() => {
     if (!updatePollTimer) return;
-    window.clearInterval(updatePollTimer);
-    updatePollTimer = null;
-    $("#admin-password").disabled = false;
-    $("#chat-file").disabled = false;
-    $("#admin-upload-form button").disabled = false;
-    $("#admin-close").disabled = false;
-    $("#admin-reload").hidden = false;
-    setAdminFeedback("La actualización se ha enviado. Puedes recargar la página.");
+    setAdminFeedback("GitHub Pages todavía está publicando los datos...", false, true);
   }, 30000);
 }
 
@@ -162,8 +158,7 @@ async function uploadChat(event) {
     const response = await fetch(`${ADMIN_WORKER_URL}/upload`, { method: "POST", body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "No se pudo subir el chat.");
-    $("#admin-reload").hidden = false;
-    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.");
+    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.", false, true);
     $("#chat-file").value = "";
     waitForUpdatedData();
   } catch (error) {
@@ -514,11 +509,10 @@ function initializeCharts() {
 
 async function init() {
   try {
-    const dataCacheKey = `?t=${Date.now()}`;
     const [response, topicsResponse, markerResponse] = await Promise.all([
-      fetch(`data/staging/cagadas.csv${dataCacheKey}`, { cache: "no-store" }),
-      fetch(`data/staging/conversaciones_caca.json${dataCacheKey}`, { cache: "no-store" }),
-      fetch(`data/staging/ultima_actualizacion.json${dataCacheKey}`, { cache: "no-store" }),
+      fetchFresh("data/staging/cagadas.csv"),
+      fetchFresh("data/staging/conversaciones_caca.json"),
+      fetchFresh("data/staging/ultima_actualizacion.json"),
     ]);
     if (!response.ok) throw new Error(`CSV request failed: ${response.status}`);
     if (!topicsResponse.ok) throw new Error(`Topics request failed: ${topicsResponse.status}`);
@@ -541,7 +535,11 @@ async function init() {
     $("#status-text").textContent = `última cagada: ${formatTimestamp(latestPoop.date)}`;
     $("#admin-trigger").addEventListener("click", openAdminModal);
     $("#admin-close").addEventListener("click", closeAdminModal);
-    $("#admin-reload").addEventListener("click", () => window.location.reload());
+    $("#admin-reload").addEventListener("click", () => {
+      const freshUrl = new URL(window.location.href);
+      freshUrl.searchParams.set("cb", Date.now());
+      window.location.replace(freshUrl.href);
+    });
     $("#admin-upload-form").addEventListener("submit", uploadChat);
     $("#admin-modal").addEventListener("click", (event) => { if (event.target.id === "admin-modal") closeAdminModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#admin-modal").hidden) closeAdminModal(); });

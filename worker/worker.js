@@ -29,6 +29,8 @@ function jsonResponse(payload, status, request, env) {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+      Pragma: "no-cache",
       ...corsHeaders(request, env),
     },
   });

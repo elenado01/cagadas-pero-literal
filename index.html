@@ -9,6 +9,14 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Cagadas, pero literal</title>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => registrations.forEach((registration) => registration.unregister()));
+      }
+      if ("caches" in window) {
+        caches.keys().then((cacheNames) => cacheNames.forEach((cacheName) => caches.delete(cacheName)));
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
