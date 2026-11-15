@@ -17,6 +17,8 @@ let charts = {};
 let people = [];
 let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "records", predicate: () => true };
 let adminPassword = "";
+let dataSnapshot = "";
+let updatePollTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
@@ -69,10 +71,12 @@ function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function setAdminFeedback(message, isError = false) {
+function setAdminFeedback(message, isError = false, isLoading = false) {
   const feedback = $("#admin-feedback");
   feedback.textContent = message;
   feedback.classList.toggle("is-error", isError);
+  feedback.classList.toggle("is-loading", isLoading);
+  feedback.setAttribute("aria-busy", String(isLoading));
 }
 
 function openAdminModal() {
@@ -81,11 +85,41 @@ function openAdminModal() {
 }
 
 function closeAdminModal() {
+  if (updatePollTimer) return;
   $("#admin-modal").hidden = true;
   adminPassword = "";
   $("#admin-password").value = "";
   $("#chat-file").value = "";
+  $("#admin-password").disabled = false;
+  $("#chat-file").disabled = false;
+  $("#admin-upload-form button").disabled = false;
+  $("#admin-close").disabled = false;
   setAdminFeedback("");
+}
+
+async function checkForUpdatedData() {
+  const cacheKey = `?t=${Date.now()}`;
+  const [csvResponse, topicsResponse] = await Promise.all([
+    fetch(`data/staging/cagadas.csv${cacheKey}`, { cache: "no-store" }),
+    fetch(`data/staging/conversaciones_caca.json${cacheKey}`, { cache: "no-store" }),
+  ]);
+  if (!csvResponse.ok || !topicsResponse.ok) return false;
+  const snapshot = `${await csvResponse.text()}\n${await topicsResponse.text()}`;
+  return snapshot !== dataSnapshot;
+}
+
+function waitForUpdatedData() {
+  updatePollTimer = window.setInterval(async () => {
+    try {
+      if (!await checkForUpdatedData()) return;
+      window.clearInterval(updatePollTimer);
+      updatePollTimer = null;
+      $("#admin-modal").hidden = true;
+      window.location.reload();
+    } catch (error) {
+      console.error("No se pudo comprobar la actualización", error);
+    }
+  }, 10000);
 }
 
 async function uploadChat(event) {
@@ -104,8 +138,13 @@ async function uploadChat(event) {
     const response = await fetch(`${ADMIN_WORKER_URL}/upload`, { method: "POST", body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "No se pudo subir el chat.");
-    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.");
+    $("#admin-password").disabled = true;
+    $("#chat-file").disabled = true;
+    $("#admin-upload-form button").disabled = true;
+    $("#admin-close").disabled = true;
+    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.", false, true);
     $("#chat-file").value = "";
+    waitForUpdatedData();
   } catch (error) {
     setAdminFeedback(error.message || "No se pudo iniciar la actualización.", true);
   }
@@ -454,14 +493,18 @@ function initializeCharts() {
 
 async function init() {
   try {
+    const dataCacheKey = `?t=${Date.now()}`;
     const [response, topicsResponse] = await Promise.all([
-      fetch("data/staging/cagadas.csv"),
-      fetch("data/staging/conversaciones_caca.json"),
+      fetch(`data/staging/cagadas.csv${dataCacheKey}`, { cache: "no-store" }),
+      fetch(`data/staging/conversaciones_caca.json${dataCacheKey}`, { cache: "no-store" }),
     ]);
     if (!response.ok) throw new Error(`CSV request failed: ${response.status}`);
     if (!topicsResponse.ok) throw new Error(`Topics request failed: ${topicsResponse.status}`);
-    rows = parseCsv(await response.text());
-    topicMessages = (await topicsResponse.json()).map((item) => ({ ...item, date: new Date(item.timestamp) }));
+    const csvText = await response.text();
+    const topicsText = await topicsResponse.text();
+    dataSnapshot = `${csvText}\n${topicsText}`;
+    rows = parseCsv(csvText);
+    topicMessages = JSON.parse(topicsText).map((item) => ({ ...item, date: new Date(item.timestamp) }));
     const years = [...new Set(rows.map((row) => row.year))].sort((a, b) => a - b);
     people = [...new Set(rows.map((row) => row.cagadora))].sort();
     years.forEach((year) => $("#year-filter").insertAdjacentHTML("beforeend", `<option value="${year}">${year}</option>`));
