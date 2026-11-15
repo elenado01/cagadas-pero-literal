@@ -1,5 +1,15 @@
 [
   {
+    "timestamp": "2026-11-02T10:17",
+    "year": 2026,
+    "person": "Elena",
+    "topic": "Conversación sobre caca",
+    "related_topics": [
+      "Conversación sobre caca"
+    ],
+    "text": "cagad"
+  },
+  {
     "timestamp": "2026-10-28T11:59",
     "year": 2026,
     "person": "Elena",
