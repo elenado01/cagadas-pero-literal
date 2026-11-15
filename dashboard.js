@@ -99,12 +99,14 @@ function closeAdminModal() {
 
 async function checkForUpdatedData() {
   const cacheKey = `?t=${Date.now()}`;
-  const [csvResponse, topicsResponse] = await Promise.all([
+  const [csvResponse, topicsResponse, markerResponse] = await Promise.all([
     fetch(`data/staging/cagadas.csv${cacheKey}`, { cache: "no-store" }),
     fetch(`data/staging/conversaciones_caca.json${cacheKey}`, { cache: "no-store" }),
+    fetch(`data/staging/ultima_actualizacion.json${cacheKey}`, { cache: "no-store" }),
   ]);
   if (!csvResponse.ok || !topicsResponse.ok) return false;
-  const snapshot = `${await csvResponse.text()}\n${await topicsResponse.text()}`;
+  const marker = markerResponse.ok ? await markerResponse.text() : "";
+  const snapshot = `${await csvResponse.text()}\n${await topicsResponse.text()}\n${marker}`;
   return snapshot !== dataSnapshot;
 }
 
@@ -494,15 +496,17 @@ function initializeCharts() {
 async function init() {
   try {
     const dataCacheKey = `?t=${Date.now()}`;
-    const [response, topicsResponse] = await Promise.all([
+    const [response, topicsResponse, markerResponse] = await Promise.all([
       fetch(`data/staging/cagadas.csv${dataCacheKey}`, { cache: "no-store" }),
       fetch(`data/staging/conversaciones_caca.json${dataCacheKey}`, { cache: "no-store" }),
+      fetch(`data/staging/ultima_actualizacion.json${dataCacheKey}`, { cache: "no-store" }),
     ]);
     if (!response.ok) throw new Error(`CSV request failed: ${response.status}`);
     if (!topicsResponse.ok) throw new Error(`Topics request failed: ${topicsResponse.status}`);
     const csvText = await response.text();
     const topicsText = await topicsResponse.text();
-    dataSnapshot = `${csvText}\n${topicsText}`;
+    const markerText = markerResponse.ok ? await markerResponse.text() : "";
+    dataSnapshot = `${csvText}\n${topicsText}\n${markerText}`;
     rows = parseCsv(csvText);
     topicMessages = JSON.parse(topicsText).map((item) => ({ ...item, date: new Date(item.timestamp) }));
     const years = [...new Set(rows.map((row) => row.year))].sort((a, b) => a - b);

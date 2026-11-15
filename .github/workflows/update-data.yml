@@ -60,6 +60,9 @@ jobs:
       - name: Regenerate conversation data
         run: python extract_topic_messages.py
 
+      - name: Write update marker
+        run: printf '{"updated_at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > data/staging/ultima_actualizacion.json
+
       - name: Remove temporary TXT from workspace
         if: always()
         run: rm -f -- "data/raw/Chat de WhatsApp con 💩.txt"
@@ -72,7 +75,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/staging/cagadas.csv data/staging/conversaciones_caca.json
+          git add data/staging/cagadas.csv data/staging/conversaciones_caca.json data/staging/ultima_actualizacion.json
           if git diff --cached --quiet; then
             echo "No hay cambios en los datos generados."
             exit 0
