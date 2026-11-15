@@ -86,7 +86,8 @@ function openAdminModal() {
 }
 
 function closeAdminModal() {
-  if (updatePollTimer) return;
+  if (updatePollTimer) window.clearInterval(updatePollTimer);
+  updatePollTimer = null;
   if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
   updateTimeoutTimer = null;
   $("#admin-modal").hidden = true;
@@ -141,8 +142,8 @@ function waitForUpdatedData() {
     $("#admin-upload-form button").disabled = false;
     $("#admin-close").disabled = false;
     $("#admin-reload").hidden = false;
-    setAdminFeedback("La actualización debería haber terminado. Puedes recargar la página.");
-  }, 120000);
+    setAdminFeedback("La actualización se ha enviado. Puedes recargar la página.");
+  }, 30000);
 }
 
 async function uploadChat(event) {
@@ -161,11 +162,8 @@ async function uploadChat(event) {
     const response = await fetch(`${ADMIN_WORKER_URL}/upload`, { method: "POST", body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "No se pudo subir el chat.");
-    $("#admin-password").disabled = true;
-    $("#chat-file").disabled = true;
-    $("#admin-upload-form button").disabled = true;
-    $("#admin-close").disabled = true;
-    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.", false, true);
+    $("#admin-reload").hidden = false;
+    setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.");
     $("#chat-file").value = "";
     waitForUpdatedData();
   } catch (error) {
