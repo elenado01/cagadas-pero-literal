@@ -19,6 +19,7 @@ let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "rec
 let adminPassword = "";
 let dataSnapshot = "";
 let updatePollTimer = null;
+let updateTimeoutTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
@@ -86,10 +87,13 @@ function openAdminModal() {
 
 function closeAdminModal() {
   if (updatePollTimer) return;
+  if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
+  updateTimeoutTimer = null;
   $("#admin-modal").hidden = true;
   adminPassword = "";
   $("#admin-password").value = "";
   $("#chat-file").value = "";
+  $("#admin-reload").hidden = true;
   $("#admin-password").disabled = false;
   $("#chat-file").disabled = false;
   $("#admin-upload-form button").disabled = false;
@@ -116,12 +120,29 @@ function waitForUpdatedData() {
       if (!await checkForUpdatedData()) return;
       window.clearInterval(updatePollTimer);
       updatePollTimer = null;
-      $("#admin-modal").hidden = true;
-      window.location.reload();
+      if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
+      updateTimeoutTimer = null;
+      $("#admin-password").disabled = false;
+      $("#chat-file").disabled = false;
+      $("#admin-upload-form button").disabled = false;
+      $("#admin-close").disabled = false;
+      $("#admin-reload").hidden = false;
+      setAdminFeedback("Datos actualizados.");
     } catch (error) {
       console.error("No se pudo comprobar la actualización", error);
     }
   }, 10000);
+  updateTimeoutTimer = window.setTimeout(() => {
+    if (!updatePollTimer) return;
+    window.clearInterval(updatePollTimer);
+    updatePollTimer = null;
+    $("#admin-password").disabled = false;
+    $("#chat-file").disabled = false;
+    $("#admin-upload-form button").disabled = false;
+    $("#admin-close").disabled = false;
+    $("#admin-reload").hidden = false;
+    setAdminFeedback("La actualización debería haber terminado. Puedes recargar la página.");
+  }, 120000);
 }
 
 async function uploadChat(event) {
@@ -522,6 +543,7 @@ async function init() {
     $("#status-text").textContent = `última cagada: ${formatTimestamp(latestPoop.date)}`;
     $("#admin-trigger").addEventListener("click", openAdminModal);
     $("#admin-close").addEventListener("click", closeAdminModal);
+    $("#admin-reload").addEventListener("click", () => window.location.reload());
     $("#admin-upload-form").addEventListener("submit", uploadChat);
     $("#admin-modal").addEventListener("click", (event) => { if (event.target.id === "admin-modal") closeAdminModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#admin-modal").hidden) closeAdminModal(); });

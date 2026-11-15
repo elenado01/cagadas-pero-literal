@@ -154,6 +154,8 @@ select option, select option:checked, select option:focus { background: var(--in
 .admin-form input[type="password"], .admin-form input[type="file"] { width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 0; background: var(--paper); color: var(--ink); font: 12px var(--mono); }
 .admin-form input[type="file"] { padding: 9px; }
 .admin-form button { justify-self: start; padding: 11px 15px; border: 1px solid var(--ink); background: var(--ink); color: var(--card); font: 11px var(--mono); cursor: pointer; }
+.admin-reload { margin-top: 12px; padding: 11px 15px; border: 1px solid var(--coral); background: var(--coral); color: var(--ink); font: 11px var(--mono); cursor: pointer; }
+.admin-reload:hover { background: var(--acid); }
 .admin-form button:hover { border-color: var(--coral); background: var(--coral); }
 .admin-feedback { min-height: 18px; margin: 18px 0 0; color: var(--muted); font: 11px/1.4 var(--mono); }
 .admin-feedback.is-error { color: var(--coral); }
