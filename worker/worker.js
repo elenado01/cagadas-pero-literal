@@ -18,7 +18,7 @@ function allowedOrigin(request, env) {
 function corsHeaders(request, env) {
   return {
     "Access-Control-Allow-Origin": allowedOrigin(request, env),
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     Vary: "Origin",
   };
@@ -55,6 +55,28 @@ export default {
       const url = new URL(request.url);
       if (request.method === "GET" && url.pathname === "/") {
         return jsonResponse({ ok: true, message: "Worker de subida activo." }, 200, request, env);
+      }
+      if (request.method === "GET" && url.pathname === "/status") {
+        const since = Date.parse(url.searchParams.get("since") || "");
+        if (!Number.isFinite(since)) return jsonResponse({ error: "Falta la fecha de inicio." }, 400, request, env);
+        const runsResponse = await fetch(
+          `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPOSITORY}/actions/runs?event=repository_dispatch&per_page=20`,
+          {
+            headers: {
+              Accept: "application/vnd.github+json",
+              Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "cagadas-upload-worker",
+            },
+          },
+        );
+        if (!runsResponse.ok) return jsonResponse({ error: "No se pudo consultar GitHub Actions." }, 502, request, env);
+        const runs = await runsResponse.json();
+        const run = (runs.workflow_runs || []).find((item) => Date.parse(item.created_at) >= since - 60000);
+        if (!run) return jsonResponse({ status: "pending" }, 200, request, env);
+        if (run.status !== "completed") return jsonResponse({ status: "running" }, 200, request, env);
+        if (run.conclusion !== "success") return jsonResponse({ status: "failed" }, 200, request, env);
+        return jsonResponse({ status: "completed" }, 200, request, env);
       }
       if (request.method !== "POST") {
         return jsonResponse({ error: "Método no permitido." }, 405, request, env);
@@ -119,7 +141,7 @@ export default {
       }
 
       return jsonResponse(
-        { ok: true, message: "Archivo recibido. GitHub Actions actualizará los datos." },
+        { ok: true, started_at: new Date().toISOString(), message: "Archivo recibido. GitHub Actions actualizará los datos." },
         200,
         request,
         env,

@@ -18,13 +18,14 @@ let people = [];
 let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "records", predicate: () => true };
 let adminPassword = "";
 let dataSnapshot = "";
+let updateStartedAt = "";
 let updatePollTimer = null;
 let updateTimeoutTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
-const fetchFresh = (path) => fetch(`${path}?cb=${Date.now()}-${Math.random().toString(36).slice(2)}`, {
+const fetchFresh = (path) => fetch(`${path}${path.includes("?") ? "&" : "?"}cb=${Date.now()}-${Math.random().toString(36).slice(2)}`, {
   cache: "no-store",
   headers: { "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
 });
@@ -118,20 +119,31 @@ async function checkForUpdatedData() {
   return snapshot !== dataSnapshot;
 }
 
+async function checkUpdateStatus() {
+  const response = await fetchFresh(`${ADMIN_WORKER_URL}/status?since=${encodeURIComponent(updateStartedAt)}`);
+  if (!response.ok) return false;
+  const result = await response.json();
+  if (result.status === "failed") throw new Error("GitHub Actions no pudo actualizar los datos.");
+  return result.status === "completed";
+}
+
+function showUpdatedDataReady() {
+  window.clearInterval(updatePollTimer);
+  updatePollTimer = null;
+  if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
+  updateTimeoutTimer = null;
+  $("#admin-password").disabled = false;
+  $("#chat-file").disabled = false;
+  $("#admin-upload-form button").disabled = false;
+  $("#admin-close").disabled = false;
+  $("#admin-reload").hidden = false;
+  setAdminFeedback("Datos actualizados.");
+}
+
 function waitForUpdatedData() {
   updatePollTimer = window.setInterval(async () => {
     try {
-      if (!await checkForUpdatedData()) return;
-      window.clearInterval(updatePollTimer);
-      updatePollTimer = null;
-      if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
-      updateTimeoutTimer = null;
-      $("#admin-password").disabled = false;
-      $("#chat-file").disabled = false;
-      $("#admin-upload-form button").disabled = false;
-      $("#admin-close").disabled = false;
-      $("#admin-reload").hidden = false;
-      setAdminFeedback("Datos actualizados.");
+      if (await checkUpdateStatus()) showUpdatedDataReady();
     } catch (error) {
       console.error("No se pudo comprobar la actualización", error);
     }
@@ -158,6 +170,7 @@ async function uploadChat(event) {
     const response = await fetch(`${ADMIN_WORKER_URL}/upload`, { method: "POST", body: formData });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "No se pudo subir el chat.");
+    updateStartedAt = result.started_at;
     setAdminFeedback("Recibido. GitHub Actions actualizará los datos en unos instantes.", false, true);
     $("#chat-file").value = "";
     waitForUpdatedData();
