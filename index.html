@@ -5,14 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#f4efe7" />
     <meta name="description" content="Dashboard de actividad intestinal del grupo." />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Cagadas, pero literal</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
+    <script>
+      const cacheBust = Date.now();
+      document.write(`<link rel="stylesheet" href="styles.css?cb=${cacheBust}" />`);
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
-    <script src="dashboard.js" defer></script>
+    <script>document.write(`<script src="dashboard.js?cb=${Date.now()}" defer><\/script>`);</script>
   </head>
   <body>
     <div class="page-shell">
