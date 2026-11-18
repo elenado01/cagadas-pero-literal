@@ -7,6 +7,7 @@ const COLORS = {
   paper: "#ebe2d5",
 };
 const ADMIN_WORKER_URL = "https://cagadas-upload.elena-d-o-2012.workers.dev";
+const DATA_BASE_URL = "https://raw.githubusercontent.com/elenado01/cagadas-pero-literal/main/data/staging";
 
 const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 const MONTH_NAMES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
@@ -109,9 +110,9 @@ function closeAdminModal() {
 
 async function checkForUpdatedData() {
   const [csvResponse, topicsResponse, markerResponse] = await Promise.all([
-    fetchFresh("data/staging/cagadas.csv"),
-    fetchFresh("data/staging/conversaciones_caca.json"),
-    fetchFresh("data/staging/ultima_actualizacion.json"),
+    fetchFresh(`${DATA_BASE_URL}/cagadas.csv`),
+    fetchFresh(`${DATA_BASE_URL}/conversaciones_caca.json`),
+    fetchFresh(`${DATA_BASE_URL}/ultima_actualizacion.json`),
   ]);
   if (!csvResponse.ok || !topicsResponse.ok) return false;
   const marker = markerResponse.ok ? await markerResponse.text() : "";
@@ -523,9 +524,9 @@ function initializeCharts() {
 async function init() {
   try {
     const [response, topicsResponse, markerResponse] = await Promise.all([
-      fetchFresh("data/staging/cagadas.csv"),
-      fetchFresh("data/staging/conversaciones_caca.json"),
-      fetchFresh("data/staging/ultima_actualizacion.json"),
+      fetchFresh(`${DATA_BASE_URL}/cagadas.csv`),
+      fetchFresh(`${DATA_BASE_URL}/conversaciones_caca.json`),
+      fetchFresh(`${DATA_BASE_URL}/ultima_actualizacion.json`),
     ]);
     if (!response.ok) throw new Error(`CSV request failed: ${response.status}`);
     if (!topicsResponse.ok) throw new Error(`Topics request failed: ${topicsResponse.status}`);
