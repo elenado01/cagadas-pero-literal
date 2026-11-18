@@ -28,7 +28,6 @@ const getPersonColor = (person) => PERSON_COLORS[person] || COLORS.muted;
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 const fetchFresh = (path) => fetch(`${path}${path.includes("?") ? "&" : "?"}cb=${Date.now()}-${Math.random().toString(36).slice(2)}`, {
   cache: "no-store",
-  headers: { "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
 });
 
 function parseCsv(csv) {
