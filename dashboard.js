@@ -19,6 +19,7 @@ let people = [];
 let historySelection = { title: "Quién estuvo ahí cuando ocurrió", type: "records", predicate: () => true };
 let adminPassword = "";
 let dataSnapshot = "";
+let dataVersion = { recordCount: 0, latestTimestamp: "" };
 let updateStartedAt = "";
 let updatePollTimer = null;
 let updateTimeoutTimer = null;
@@ -114,9 +115,13 @@ async function checkForUpdatedData() {
     fetchFresh(`${DATA_BASE_URL}/ultima_actualizacion.json`),
   ]);
   if (!csvResponse.ok || !topicsResponse.ok) return false;
-  const marker = markerResponse.ok ? await markerResponse.text() : "";
-  const snapshot = `${await csvResponse.text()}\n${await topicsResponse.text()}\n${marker}`;
-  return snapshot !== dataSnapshot;
+  const csvText = await csvResponse.text();
+  const lines = csvText.trim().split(/\r?\n/);
+  const headers = lines[0].split(",");
+  const timestampIndex = headers.indexOf("timestamp cagada");
+  const latestTimestamp = timestampIndex >= 0 && lines.length > 1 ? lines[lines.length - 1].split(",")[timestampIndex] : "";
+  const nextVersion = { recordCount: Math.max(0, lines.length - 1), latestTimestamp };
+  return nextVersion.recordCount !== dataVersion.recordCount || nextVersion.latestTimestamp !== dataVersion.latestTimestamp;
 }
 
 async function checkUpdateStatus() {
@@ -127,23 +132,25 @@ async function checkUpdateStatus() {
   return result.status === "completed";
 }
 
+function reloadWithFreshData() {
+  const freshUrl = new URL(window.location.href);
+  freshUrl.searchParams.set("cb", Date.now());
+  window.location.replace(freshUrl.href);
+}
+
 function showUpdatedDataReady() {
   window.clearInterval(updatePollTimer);
   updatePollTimer = null;
   if (updateTimeoutTimer) window.clearTimeout(updateTimeoutTimer);
   updateTimeoutTimer = null;
-  $("#admin-password").disabled = false;
-  $("#chat-file").disabled = false;
-  $("#admin-upload-form button").disabled = false;
-  $("#admin-close").disabled = false;
-  $("#admin-reload").hidden = false;
-  setAdminFeedback("Datos actualizados.");
+  closeAdminModal();
+  window.setTimeout(reloadWithFreshData, 150);
 }
 
 function waitForUpdatedData() {
   updatePollTimer = window.setInterval(async () => {
     try {
-      if (await checkUpdateStatus()) showUpdatedDataReady();
+      if (await checkUpdateStatus() && await checkForUpdatedData()) showUpdatedDataReady();
     } catch (error) {
       console.error("No se pudo comprobar la actualización", error);
     }
@@ -533,6 +540,13 @@ async function init() {
     const topicsText = await topicsResponse.text();
     const markerText = markerResponse.ok ? await markerResponse.text() : "";
     dataSnapshot = `${csvText}\n${topicsText}\n${markerText}`;
+    const csvLines = csvText.trim().split(/\r?\n/);
+    const csvHeaders = csvLines[0].split(",");
+    const timestampIndex = csvHeaders.indexOf("timestamp cagada");
+    dataVersion = {
+      recordCount: Math.max(0, csvLines.length - 1),
+      latestTimestamp: timestampIndex >= 0 && csvLines.length > 1 ? csvLines[csvLines.length - 1].split(",")[timestampIndex] : "",
+    };
     rows = parseCsv(csvText);
     topicMessages = JSON.parse(topicsText).map((item) => ({ ...item, date: new Date(item.timestamp) }));
     const years = [...new Set(rows.map((row) => row.year))].sort((a, b) => a - b);
@@ -548,11 +562,7 @@ async function init() {
     $("#status-text").textContent = `última cagada: ${formatTimestamp(latestPoop.date)}`;
     $("#admin-trigger").addEventListener("click", openAdminModal);
     $("#admin-close").addEventListener("click", closeAdminModal);
-    $("#admin-reload").addEventListener("click", () => {
-      const freshUrl = new URL(window.location.href);
-      freshUrl.searchParams.set("cb", Date.now());
-      window.location.replace(freshUrl.href);
-    });
+    $("#admin-reload").addEventListener("click", reloadWithFreshData);
     $("#admin-upload-form").addEventListener("submit", uploadChat);
     $("#admin-modal").addEventListener("click", (event) => { if (event.target.id === "admin-modal") closeAdminModal(); });
     document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("#admin-modal").hidden) closeAdminModal(); });
