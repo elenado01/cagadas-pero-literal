@@ -109,12 +109,8 @@ function closeAdminModal() {
 }
 
 async function checkForUpdatedData() {
-  const [csvResponse, topicsResponse, markerResponse] = await Promise.all([
-    fetchFresh(`${DATA_BASE_URL}/cagadas.csv`),
-    fetchFresh(`${DATA_BASE_URL}/conversaciones_caca.json`),
-    fetchFresh(`${DATA_BASE_URL}/ultima_actualizacion.json`),
-  ]);
-  if (!csvResponse.ok || !topicsResponse.ok) return false;
+  const csvResponse = await fetchFresh(`${DATA_BASE_URL}/cagadas.csv`);
+  if (!csvResponse.ok) return false;
   const csvText = await csvResponse.text();
   const lines = csvText.trim().split(/\r?\n/);
   const headers = lines[0].split(",");
@@ -126,7 +122,7 @@ async function checkForUpdatedData() {
 
 async function checkUpdateStatus() {
   const response = await fetchFresh(`${ADMIN_WORKER_URL}/status?since=${encodeURIComponent(updateStartedAt)}`);
-  if (!response.ok) return false;
+  if (!response.ok) throw new Error(`No se pudo consultar el estado de GitHub Actions (${response.status}).`);
   const result = await response.json();
   if (result.status === "failed") throw new Error("GitHub Actions no pudo actualizar los datos.");
   return result.status === "completed";
